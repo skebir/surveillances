@@ -1,1 +1,2 @@
 locales-all
+libpango-1.0-0
