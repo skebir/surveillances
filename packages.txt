@@ -1,1 +1,1 @@
-locale_all
+locales-all
