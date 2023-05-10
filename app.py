@@ -18,14 +18,14 @@ st.write(
 """
 )
 
-st.header("Générateur de convocations")
 st.subheader("1. 📂 Uploader un fichier .ods")
 
 if uploaded := st.file_uploader(
     "Fichier .ods contenant les données brut des surveillances", type="ods"
 ):
     data = pd.read_excel(uploaded)
-    st.subheader("2. 📑 Créer un modèle de convocation")
+    st.header("1. Générateur de convocations")
+    st.subheader("1.1 📑 Créer un modèle de convocation")
     st.markdown("""Utiliser ou modifier le modèle de convocation ci-dessous. Utiliser les balises :
 - *{{ enseignant }}* sera remplacée par le **nom de l'enseignant**
 - *{{ surveillances }}* sera remplacée par le **tableau de surveillances**
@@ -51,7 +51,7 @@ dans le hall entre les deux amphis 10 minutes avant le début de chaque épreuve
     )
     with st.expander("Aperçu de la convocation"):
         st.markdown(modèle_convocation, unsafe_allow_html=True)
-    st.subheader("3. ⚙️ Générer les convocations")
+    st.subheader("1.2. ⚙️ Générer les convocations")
     st.markdown(
         "Cliquer sur le bouton ```⚡️ Générer les convocation ...``` et attendre que le processus se termine."
     )
@@ -94,8 +94,8 @@ dans le hall entre les deux amphis 10 minutes avant le début de chaque épreuve
             file_name="convocations.zip",
             mime="application/zip",
         )
-
-    st.subheader("4. 📑 Créer un modèle de fiche de suivi")
+    st.header("2. Générateur de fiches de suivi")
+    st.subheader("2.1. 📑 Créer un modèle de fiche de suivi")
     st.markdown("""Utiliser ou modifier le modèle de fiche de suivi ci-dessous. Utiliser les balises :
 - *{{ date }}* sera remplacée par la **date de l'épreuve**
 - *{{ épreuve }}* sera remplacée par le **nom de l'épreuve**
@@ -118,7 +118,7 @@ dans le hall entre les deux amphis 10 minutes avant le début de chaque épreuve
     with st.expander("Aperçu de la fiche de suivi"):
         st.markdown(modèle_fiche, unsafe_allow_html=True)
     
-    st.subheader("5. ⚙️ Générer les fiches de suivi")
+    st.subheader("2.2. ⚙️ Générer les fiches de suivi")
     st.markdown(
         "Cliquer sur le bouton ```⚡️ Générer les fiches de suivi ...``` et attendre que le processus se termine."
     )
