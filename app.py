@@ -5,6 +5,7 @@ import markdown
 import zipfile
 from io import BytesIO
 import locale
+from weasyprint import HTML
 
 locale.setlocale(locale.LC_ALL, locale="fr_FR")
 
