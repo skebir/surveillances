@@ -1,0 +1,24 @@
+@font-face {
+    font-family: Inter;
+    src: url('fonts/inter.ttf');
+}
+
+body {
+    font-family: Inter;
+    text-align: justify;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    border-top: .2mm solid;
+    border-bottom: .2mm solid;
+}
+
+tr {
+    height: 2em;
+    border-bottom: .2mm solid;
+}
