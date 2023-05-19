@@ -10,6 +10,57 @@ from weasyprint import HTML
 
 locale.setlocale(locale.LC_ALL, locale="fr_FR")
 
+def surveillances_enseignant_pdf(data, enseignant, modèle_convocation, style_sheet="style_convocation.css"):
+	surveillances_enseignant = data.loc[
+	    data["Enseignant"] == enseignant, ["Date", "Horaire", "Matière"]
+	].sort_values(by=["Date", "Horaire"])
+	surveillances_enseignant["Date"] = surveillances_enseignant[
+	    "Date"
+	].dt.strftime("%A %d %B %Y")
+	convocation_template = Environment(loader=BaseLoader).from_string(
+	    modèle_convocation
+	)
+	rendered_md = convocation_template.render(
+	    {
+		"enseignant": enseignant,
+		"surveillances": surveillances_enseignant.to_markdown(
+		    index=False
+		),
+	    }
+	)
+	rendered_html = markdown.markdown(rendered_md, extensions=["tables"])
+	pdf = HTML(string=rendered_html).write_pdf(
+	    stylesheets=[style_sheet]
+	)
+	return pdf
+
+def surveillants_epreuve_pdf(data, epreuve, modèle_fiche, style_sheet="style_fiche.css"):
+    surveillants = data.loc[
+        data["VraiMatière"] == epreuve, ["Enseignant"]
+    ].sort_values(by=["Enseignant"])
+    surveillants["Salle"] = ""
+    surveillants["Observation"] = ""
+    fiche_template = Environment(loader=BaseLoader).from_string(
+        modèle_fiche
+    )
+    rendered_md = fiche_template.render(
+        {
+            "epreuve": epreuve,
+            "surveillants": surveillants.to_markdown(index=False),
+            "date": data.loc[data["VraiMatière"] == epreuve, ["Date"]]
+            .iloc[0, 0]
+            .strftime("%A %-d %B %Y"),
+            "horaire": data.loc[
+                data["VraiMatière"] == epreuve, ["Horaire"]
+            ].iloc[0, 0],
+        }
+    )
+    rendered_html = markdown.markdown(rendered_md, extensions=["tables"])
+    pdf = HTML(string=rendered_html).write_pdf(
+        stylesheets=[style_sheet]
+    )
+    return pdf
+
 st.title("Gestion des surveillances")
 
 st.write(
@@ -64,27 +115,7 @@ dans le hall entre les deux amphis 10 minutes avant le début de chaque épreuve
 
         with zipfile.ZipFile(zip_buffer, "w", compression=zipfile.ZIP_STORED) as zip_file:
             for index, enseignant in enumerate(enseignants):
-                surveillances_enseignant = data.loc[
-                    data["Enseignant"] == enseignant, ["Date", "Horaire", "Matière"]
-                ].sort_values(by=["Date", "Horaire"])
-                surveillances_enseignant["Date"] = surveillances_enseignant[
-                    "Date"
-                ].dt.strftime("%A %d %B %Y")
-                convocation_template = Environment(loader=BaseLoader).from_string(
-                    modèle_convocation
-                )
-                rendered_md = convocation_template.render(
-                    {
-                        "enseignant": enseignant,
-                        "surveillances": surveillances_enseignant.to_markdown(
-                            index=False
-                        ),
-                    }
-                )
-                rendered_html = markdown.markdown(rendered_md, extensions=["tables"])
-                pdf = HTML(string=rendered_html).write_pdf(
-                    stylesheets=["style_convocation.css"]
-                )
+                pdf = surveillances_enseignant_pdf(data, enseignant, modèle_convocation)
                 zip_file.writestr(f"{enseignant}.pdf", pdf)
                 progress_bar.progress(
                     (index + 1) / len(enseignants),
@@ -132,30 +163,7 @@ dans le hall entre les deux amphis 10 minutes avant le début de chaque épreuve
 
         with zipfile.ZipFile(zip_buffer, "w", compression=zipfile.ZIP_STORED) as zip_file:
             for index, epreuve in enumerate(epreuves):
-                surveillants = data.loc[
-                    data["VraiMatière"] == epreuve, ["Enseignant"]
-                ].sort_values(by=["Enseignant"])
-                surveillants["Salle"] = ""
-                surveillants["Observation"] = ""
-                fiche_template = Environment(loader=BaseLoader).from_string(
-                    modèle_fiche
-                )
-                rendered_md = fiche_template.render(
-                    {
-                        "epreuve": epreuve,
-                        "surveillants": surveillants.to_markdown(index=False),
-                        "date": data.loc[data["VraiMatière"] == epreuve, ["Date"]]
-                        .iloc[0, 0]
-                        .strftime("%A %-d %B %Y"),
-                        "horaire": data.loc[
-                            data["VraiMatière"] == epreuve, ["Horaire"]
-                        ].iloc[0, 0],
-                    }
-                )
-                rendered_html = markdown.markdown(rendered_md, extensions=["tables"])
-                pdf = HTML(string=rendered_html).write_pdf(
-                    stylesheets=["style_fiche.css"]
-                )
+                pdf = surveillants_epreuve_pdf(data, epreuve, modèle_fiche)
                 zip_file.writestr(f"{epreuve}.pdf".replace("/", "-"), pdf)
                 progress_bar.progress(
                     (index + 1) / len(epreuves),
