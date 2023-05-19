@@ -1,10 +1,11 @@
-import streamlit as st
-import pandas as pd
-from jinja2 import Environment, BaseLoader
-import markdown
+import locale
 import zipfile
 from io import BytesIO
-import locale
+
+import markdown
+import pandas as pd
+import streamlit as st
+from jinja2 import BaseLoader, Environment
 from weasyprint import HTML
 
 locale.setlocale(locale.LC_ALL, locale="fr_FR")
@@ -26,7 +27,8 @@ if uploaded := st.file_uploader(
     data = pd.read_excel(uploaded)
     st.header("1. Générateur de convocations")
     st.subheader("1.1 📑 Créer un modèle de convocation")
-    st.markdown("""Utiliser ou modifier le modèle de convocation ci-dessous. Utiliser les balises :
+    st.markdown(
+        """Utiliser ou modifier le modèle de convocation ci-dessous. Utiliser les balises :
 - *{{ enseignant }}* sera remplacée par le **nom de l'enseignant**
 - *{{ surveillances }}* sera remplacée par le **tableau de surveillances**
 """
@@ -60,7 +62,7 @@ dans le hall entre les deux amphis 10 minutes avant le début de chaque épreuve
         progress_bar = st.progress(0)
         zip_buffer = BytesIO()
 
-        with zipfile.ZipFile(zip_buffer, "w", compression=zipfile.ZIP_LZMA) as zip_file:
+        with zipfile.ZipFile(zip_buffer, "w", compression=zipfile.ZIP_STORED) as zip_file:
             for index, enseignant in enumerate(enseignants):
                 surveillances_enseignant = data.loc[
                     data["Enseignant"] == enseignant, ["Date", "Horaire", "Matière"]
@@ -96,7 +98,8 @@ dans le hall entre les deux amphis 10 minutes avant le début de chaque épreuve
         )
     st.header("2. Générateur de fiches de suivi")
     st.subheader("2.1. 📑 Créer un modèle de fiche de suivi")
-    st.markdown("""Utiliser ou modifier le modèle de fiche de suivi ci-dessous. Utiliser les balises :
+    st.markdown(
+        """Utiliser ou modifier le modèle de fiche de suivi ci-dessous. Utiliser les balises :
 - *{{ date }}* sera remplacée par la **date de l'épreuve**
 - *{{ épreuve }}* sera remplacée par le **nom de l'épreuve**
 - *{{ horaire }}* sera remplacée par l'**horaire de l'épreuve**
@@ -117,7 +120,7 @@ dans le hall entre les deux amphis 10 minutes avant le début de chaque épreuve
     )
     with st.expander("Aperçu de la fiche de suivi"):
         st.markdown(modèle_fiche, unsafe_allow_html=True)
-    
+
     st.subheader("2.2. ⚙️ Générer les fiches de suivi")
     st.markdown(
         "Cliquer sur le bouton ```⚡️ Générer les fiches de suivi ...``` et attendre que le processus se termine."
@@ -127,13 +130,13 @@ dans le hall entre les deux amphis 10 minutes avant le début de chaque épreuve
         progress_bar = st.progress(0)
         zip_buffer = BytesIO()
 
-        with zipfile.ZipFile(zip_buffer, "w", compression=zipfile.ZIP_LZMA) as zip_file:
+        with zipfile.ZipFile(zip_buffer, "w", compression=zipfile.ZIP_STORED) as zip_file:
             for index, epreuve in enumerate(epreuves):
                 surveillants = data.loc[
-                        data["VraiMatière"] == epreuve, ["Enseignant"]
-                    ].sort_values(by=["Enseignant"])
-                surveillants['Salle'] = ''
-                surveillants['Observation'] = ''
+                    data["VraiMatière"] == epreuve, ["Enseignant"]
+                ].sort_values(by=["Enseignant"])
+                surveillants["Salle"] = ""
+                surveillants["Observation"] = ""
                 fiche_template = Environment(loader=BaseLoader).from_string(
                     modèle_fiche
                 )
@@ -141,22 +144,26 @@ dans le hall entre les deux amphis 10 minutes avant le début de chaque épreuve
                     {
                         "epreuve": epreuve,
                         "surveillants": surveillants.to_markdown(index=False),
-                        "date" : data.loc[data['VraiMatière'] == epreuve, ['Date']].iloc[0,0].strftime("%A %-d %B %Y"),
-                        "horaire" : data.loc[data['VraiMatière'] == epreuve, ['Horaire']].iloc[0,0]
+                        "date": data.loc[data["VraiMatière"] == epreuve, ["Date"]]
+                        .iloc[0, 0]
+                        .strftime("%A %-d %B %Y"),
+                        "horaire": data.loc[
+                            data["VraiMatière"] == epreuve, ["Horaire"]
+                        ].iloc[0, 0],
                     }
                 )
                 rendered_html = markdown.markdown(rendered_md, extensions=["tables"])
                 pdf = HTML(string=rendered_html).write_pdf(
                     stylesheets=["style_fiche.css"]
                 )
-                zip_file.writestr(f"{epreuve}.pdf".replace("/","-"), pdf)
+                zip_file.writestr(f"{epreuve}.pdf".replace("/", "-"), pdf)
                 progress_bar.progress(
-                        (index + 1) / len(epreuves),
-                        f"[{index+1}/{len(epreuves)}] Fiche de suivi de {epreuve}",
+                    (index + 1) / len(epreuves),
+                    f"[{index+1}/{len(epreuves)}] Fiche de suivi de {epreuve}",
                 )
         st.download_button(
-                label="⬇️ Télécharger les fiches de suivis",
-                data=zip_buffer,
-                file_name="fiches_de_suivi.zip",
-                mime="application/zip",
-            )
+            label="⬇️ Télécharger les fiches de suivis",
+            data=zip_buffer,
+            file_name="fiches_de_suivi.zip",
+            mime="application/zip",
+        )
