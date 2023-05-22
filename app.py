@@ -5,7 +5,6 @@ from io import BytesIO
 import markdown
 import pandas as pd
 import streamlit as st
-from jinja2 import BaseLoader, Environment
 from weasyprint import HTML
 
 locale.setlocale(locale.LC_ALL, locale="fr_FR")
@@ -17,16 +16,12 @@ def surveillances_enseignant_pdf(data, enseignant, modèle_convocation, style_sh
 	surveillances_enseignant["Date"] = surveillances_enseignant[
 	    "Date"
 	].dt.strftime("%A %d %B %Y")
-	convocation_template = Environment(loader=BaseLoader).from_string(
-	    modèle_convocation
-	)
-	rendered_md = convocation_template.render(
-	    {
-		"enseignant": enseignant,
-		"surveillances": surveillances_enseignant.to_markdown(
+
+	rendered_md = modèle_convocation.format(
+		enseignant=enseignant,
+		surveillances=surveillances_enseignant.to_markdown(
 		    index=False
-		),
-	    }
+		)
 	)
 	rendered_html = markdown.markdown(rendered_md, extensions=["tables"])
 	pdf = HTML(string=rendered_html).write_pdf(
@@ -40,20 +35,16 @@ def surveillants_epreuve_pdf(data, epreuve, modèle_fiche, style_sheet="style_fi
     ].sort_values(by=["Enseignant"])
     surveillants["Salle"] = ""
     surveillants["Observation"] = ""
-    fiche_template = Environment(loader=BaseLoader).from_string(
-        modèle_fiche
-    )
-    rendered_md = fiche_template.render(
-        {
-            "epreuve": epreuve,
-            "surveillants": surveillants.to_markdown(index=False),
-            "date": data.loc[data["VraiMatière"] == epreuve, ["Date"]]
+
+    rendered_md = modèle_fiche.format(
+            epreuve=epreuve,
+            surveillants=surveillants.to_markdown(index=False),
+            date=data.loc[data["VraiMatière"] == epreuve, ["Date"]]
             .iloc[0, 0]
             .strftime("%A %-d %B %Y"),
-            "horaire": data.loc[
+            horaire=data.loc[
                 data["VraiMatière"] == epreuve, ["Horaire"]
-            ].iloc[0, 0],
-        }
+            ].iloc[0, 0]
     )
     rendered_html = markdown.markdown(rendered_md, extensions=["tables"])
     pdf = HTML(string=rendered_html).write_pdf(
@@ -80,20 +71,20 @@ if uploaded := st.file_uploader(
     st.subheader("1.1 📑 Créer un modèle de convocation")
     st.markdown(
         """Utiliser ou modifier le modèle de convocation ci-dessous. Utiliser les balises :
-- *{{ enseignant }}* sera remplacée par le **nom de l'enseignant**
-- *{{ surveillances }}* sera remplacée par le **tableau de surveillances**
+- *{enseignant}* sera remplacée par le **nom de l'enseignant**
+- *{surveillances}* sera remplacée par le **tableau de surveillances**
 """
     )
     modèle_convocation = st.text_area(
         "Modèle de la convocation",
         value="""# Convocation
 
-Mr./Mme./Mlle. **{{ enseignant }}**
+Mr./Mme./Mlle. **{enseignant}**
 
 Vous êtes cordialement invité(e) à assurer les surveillances
 des **examens semestriels** selon le planning ci-dessous :
 
-{{ surveillances }}
+{surveillances}
 
 **Le chef de département CPST**
 
@@ -131,21 +122,21 @@ dans le hall entre les deux amphis 10 minutes avant le début de chaque épreuve
     st.subheader("2.1. 📑 Créer un modèle de fiche de suivi")
     st.markdown(
         """Utiliser ou modifier le modèle de fiche de suivi ci-dessous. Utiliser les balises :
-- *{{ date }}* sera remplacée par la **date de l'épreuve**
-- *{{ épreuve }}* sera remplacée par le **nom de l'épreuve**
-- *{{ horaire }}* sera remplacée par l'**horaire de l'épreuve**
-- *{{ surveillants }}* sera remplacée par le tableau des **surveillants**
+- *{date}* sera remplacée par la **date de l'épreuve**
+- *{épreuve}* sera remplacée par le **nom de l'épreuve**
+- *{horaire}* sera remplacée par l'**horaire de l'épreuve**
+- *{surveillants}* sera remplacée par le tableau des **surveillants**
 """
     )
     modèle_fiche = st.text_area(
         "Modèle de fiche de suivi",
         value="""## Suivi des surveillants
 
-- **Date :** *{{ date }}*
-- **Matière :** *{{ epreuve }}*
-- **Horaire :** *{{ horaire }}*
+- **Date :** *{date}*
+- **Matière :** *{epreuve}*
+- **Horaire :** *{horaire}*
 
-{{ surveillants }}""",
+{surveillants}""",
         height=190,
         help="Doit respecter la syntaxe de Markdown",
     )
