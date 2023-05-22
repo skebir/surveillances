@@ -79,7 +79,7 @@ if uploaded := st.file_uploader(
         "Modèle de la convocation",
         value="""# Convocation
 
-Mr./Mme./Mlle. **{enseignant}**
+Mme./Mlle./Mr. **{enseignant}**
 
 Vous êtes cordialement invité(e) à assurer les surveillances
 des **examens semestriels** selon le planning ci-dessous :
