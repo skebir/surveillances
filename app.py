@@ -56,7 +56,7 @@ st.title("Gestion des surveillances")
 
 st.write(
     """
-    Cette application a été conçu dans le but de faciliter la
+    Cette application a été conçue dans le but de faciliter la
     génération des documents nécessaires à la gestion des surveillants des contrôles et examens
 """
 )
